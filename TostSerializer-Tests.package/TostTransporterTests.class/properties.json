@@ -1,0 +1,11 @@
+{
+	"commentStamp" : "",
+	"super" : "TostTransporterTestCase",
+	"category" : "TostSerializer-Tests",
+	"classinstvars" : [ ],
+	"pools" : [ ],
+	"classvars" : [ ],
+	"instvars" : [ ],
+	"name" : "TostTransporterTests",
+	"type" : "normal"
+}

@@ -1,0 +1,11 @@
+{
+	"commentStamp" : "DenisKudryashov 9/1/2016 17:19",
+	"super" : "TostStreamlineFormat",
+	"category" : "TostSerializer",
+	"classinstvars" : [ ],
+	"pools" : [ ],
+	"classvars" : [ ],
+	"instvars" : [ ],
+	"name" : "TostNewObjectOfDuplicatedClassFormat",
+	"type" : "normal"
+}

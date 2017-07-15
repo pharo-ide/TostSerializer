@@ -1,0 +1,2 @@
+I am format which specifies how to encode objects of classes which was already written on stream during other instances serialization.
+Originally class of object is encoded by full name string. But if new instance of object is going to be written I will use original stream position to encode class instead of name

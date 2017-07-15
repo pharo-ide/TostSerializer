@@ -1,0 +1,3 @@
+accessing
+dataPosition
+	^dataStream position

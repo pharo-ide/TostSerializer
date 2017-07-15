@@ -1,0 +1,3 @@
+*TostSerializer
+isTostValueObject 
+	^true
