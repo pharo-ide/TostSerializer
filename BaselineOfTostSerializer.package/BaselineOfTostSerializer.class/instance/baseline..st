@@ -4,10 +4,10 @@ baseline: spec
 	spec for: #'common' do: [
 		spec 
 			baseline: 'StateSpecs' with: [
-				spec repository: 'github://dionisiydk/StateSpecs:v2.4.x'];
+				spec repository: 'github://pharo-iot/StateSpecs:v2.4.10'];
 			baseline: 'ObjectTravel' with: [
 				spec
-					repository: 'github://dionisiydk/ObjectTravel:v0.6.x';
+					repository: 'github://pharo-ide/ObjectTravel:v0.6.4';
 					loads: 'Core' ];
 			project: 'ObjectTravelTests' copyFrom: 'ObjectTravel' with: [
 				spec loads: 'Tests'].
