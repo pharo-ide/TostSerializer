@@ -1,0 +1,3 @@
+*TostSerializer
+writeTostBodyWith: aTostSerialization
+	self compressToByteArray writeTostBodyWith: aTostSerialization
