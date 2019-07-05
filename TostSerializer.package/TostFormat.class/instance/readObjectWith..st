@@ -1,3 +1,0 @@
-operations
-readObjectWith: aTostMaterialization
-	self subclassResponsibility 

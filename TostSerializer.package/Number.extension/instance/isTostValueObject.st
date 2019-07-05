@@ -1,3 +1,0 @@
-*TostSerializer
-isTostValueObject
-	^true

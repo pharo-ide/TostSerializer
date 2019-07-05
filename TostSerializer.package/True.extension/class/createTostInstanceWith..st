@@ -1,4 +1,0 @@
-*TostSerializer
-createTostInstanceWith: aTostMaterialization
-
-	^true

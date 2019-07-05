@@ -1,3 +1,0 @@
-*TostSerializer
-createTostInstanceWith: aTostMaterialization
-	^aTostMaterialization readInteger 
