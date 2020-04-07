@@ -10,10 +10,10 @@ BaselineOfTostSerializer >> baseline: spec [
 	spec for: #'common' do: [
 		spec 
 			baseline: 'StateSpecs' with: [
-				spec repository: 'github://dionisiydk/StateSpecs:v4.0.0'];
+				spec repository: 'github://dionisiydk/StateSpecs:v4.0.2'];
 			baseline: 'ObjectTravel' with: [
 				spec
-					repository: 'github://pharo-ide/ObjectTravel:v1.0.1';
+					repository: 'github://pharo-ide/ObjectTravel:v1.0.2';
 					loads: 'Core' ];
 			project: 'ObjectTravelTests' copyFrom: 'ObjectTravel' with: [
 				spec loads: 'Tests'].
@@ -25,4 +25,11 @@ BaselineOfTostSerializer >> baseline: spec [
 			group: 'Core' with: #('TostSerializer' );
 			group: 'Tests' with: #('TostSerializer-Tests' )]
 
+]
+
+{ #category : #accessing }
+BaselineOfTostSerializer >> projectClass [
+	^ [ self class environment at: #MetacelloCypressBaselineProject ]
+		on: NotFound
+		do: [ super projectClass ]
 ]
