@@ -5,7 +5,7 @@ Class {
 		'materializer',
 		'binaryData'
 	],
-	#category : 'TostSerializer-Tests'
+	#category : #'TostSerializer-Tests'
 }
 
 { #category : #helpers }
@@ -484,34 +484,39 @@ TostMaterializationTests >> testReadingOneByteInteger [
 
 { #category : #'tests-primitive data' }
 TostMaterializationTests >> testReadingTwoBytesInteger [
-
 	| actual |
-	self binaryData: {2. 0. 300 digitAt: 2. 300 digitAt: 1}.
-	
+	self
+		binaryData:
+			{2.
+			0.
+			(300 byteAt: 2).
+			(300 byteAt: 1)}.
 	actual := materializer readInteger.
-	
 	actual should equal: 300
 ]
 
 { #category : #'tests-primitive data' }
 TostMaterializationTests >> testReadingTwoBytesNegativeInteger [
-
 	| actual |
-	self binaryData: {2. 1. 300 digitAt: 2. 300 digitAt: 1}.
-	
+	self
+		binaryData:
+			{2.
+			1.
+			(300 byteAt: 2).
+			(300 byteAt: 1)}.
 	actual := materializer readInteger.
-	
 	actual should equal: -300
 ]
 
 { #category : #'tests-primitive data' }
 TostMaterializationTests >> testReadingTwoBytesPositiveInteger [
-
 	| actual |
-	self binaryData: {2. 300 digitAt: 2. 300 digitAt: 1}.
-	
+	self
+		binaryData:
+			{2.
+			(300 byteAt: 2).
+			(300 byteAt: 1)}.
 	actual := materializer readPositiveInteger.
-	
 	actual should equal: 300
 ]
 
