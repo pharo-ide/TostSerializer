@@ -16,7 +16,7 @@ Public API and Key Messages
 Class {
 	#name : #TostSerialization,
 	#superclass : #TostTransportation,
-	#category : 'TostSerializer'
+	#category : #TostSerializer
 }
 
 { #category : #api }
@@ -72,14 +72,9 @@ TostSerialization >> writeDuplicatedObject: anObject format: formatId [
 TostSerialization >> writeInteger: anInteger [
 	| bytesSize |
 	bytesSize := anInteger bytesCount.
-	bytesSize > 255
-		ifTrue: [ self error: 'Too big integer is not supported' ].
+	bytesSize > 255 ifTrue: [ self error: 'Too big integer is not supported' ].
 	dataStream nextPut: bytesSize.
-	dataStream
-		nextPut:
-			(anInteger < 0
-				ifTrue: [ 1 ]
-				ifFalse: [ 0 ]).
+	dataStream nextPut: (anInteger < 0 ifTrue: [ 1 ] ifFalse: [ 0 ]).
 	bytesSize to: 1 by: -1 do: [ :i | dataStream nextPut: (anInteger byteAt: i) ]
 ]
 
@@ -115,11 +110,9 @@ TostSerialization >> writeObjectIndex: objectIdInteger format: binaryTypeByte [
 { #category : #'writing-primitive data' }
 TostSerialization >> writePositiveInteger: anInteger [
 	| bytesSize |
-	anInteger < 0
-		ifTrue: [ self error: 'Given int should be positive' ].
+	anInteger < 0 ifTrue: [ self error: 'Given int should be positive' ].
 	bytesSize := anInteger bytesCount.
-	bytesSize > 255
-		ifTrue: [ self error: 'Too big integer is not supported' ].
+	bytesSize > 255 ifTrue: [ self error: 'Too big integer is not supported' ].
 	dataStream nextPut: bytesSize.
 	bytesSize to: 1 by: -1 do: [ :i | dataStream nextPut: (anInteger byteAt: i) ]
 ]

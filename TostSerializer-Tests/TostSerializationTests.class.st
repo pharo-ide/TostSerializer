@@ -183,31 +183,17 @@ TostSerializationTests >> testWritingOneByteInteger [
 { #category : #'tests-primitive data' }
 TostSerializationTests >> testWritingTwoBytesInteger [
 	serialization writeInteger: 300.
-	self binaryData should
-		equal:
-			{2.
-			0.
-			(300 byteAt: 2).
-			(300 byteAt: 1)} asByteArray
+	self binaryData should equal: {2. 0. (300 byteAt: 2). (300 byteAt: 1)} asByteArray
 ]
 
 { #category : #'tests-primitive data' }
 TostSerializationTests >> testWritingTwoBytesNegativeInteger [
 	serialization writeInteger: -300.
-	self binaryData should
-		equal:
-			{2.
-			1.
-			(300 byteAt: 2).
-			(300 byteAt: 1)} asByteArray
+	self binaryData should equal: {2. 1. (300 byteAt: 2). (300 byteAt: 1)} asByteArray
 ]
 
 { #category : #'tests-primitive data' }
 TostSerializationTests >> testWritingTwoBytesPositiveInteger [
 	serialization writePositiveInteger: 300.
-	self binaryData should
-		equal:
-			{2.
-			(300 byteAt: 2).
-			(300 byteAt: 1)} asByteArray
+	self binaryData should equal: {2. (300 byteAt: 2). (300 byteAt: 1)} asByteArray
 ]
