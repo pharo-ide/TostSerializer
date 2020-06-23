@@ -16,7 +16,7 @@ Public API and Key Messages
 Class {
 	#name : #TostSerialization,
 	#superclass : #TostTransportation,
-	#category : #TostSerializer
+	#category : 'TostSerializer'
 }
 
 { #category : #api }
