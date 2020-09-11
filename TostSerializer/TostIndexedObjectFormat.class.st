@@ -45,11 +45,11 @@ TostIndexedObjectFormat >> objects [
 ]
 
 { #category : #operations }
-TostIndexedObjectFormat >> tryWriteObject: anObject with: aTostSerialization [
+TostIndexedObjectFormat >> tryWriteObject: anObject with: aTostTransporter [
 	
 	indexes 
 		at: anObject ifPresent: [:index |
-			aTostSerialization writeSmallObjectIndex: index format: id.
+			aTostTransporter writeSmallObjectIndex: index format: id.
 			^true]
 		ifAbsent: [^false].
 		

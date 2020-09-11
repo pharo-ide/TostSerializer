@@ -13,12 +13,12 @@ Integer >> bytesCount [
 ]
 
 { #category : #'*TostSerializer' }
-Integer class >> createTostInstanceWith: aTostMaterialization [
-	^aTostMaterialization readInteger 
+Integer class >> createTostInstanceWith: aTostTransporter [
+	^aTostTransporter readInteger 
 ]
 
 { #category : #'*TostSerializer' }
-Integer >> writeTostBodyWith: aTostSerialization [
+Integer >> writeTostBodyWith: aTostTransporter [
 	
-	aTostSerialization writeInteger: self
+	aTostTransporter writeInteger: self
 ]

@@ -48,11 +48,11 @@ TostObjectDynamicSubstitutionFormat >> substitutionBlock: anObject [
 ]
 
 { #category : #operations }
-TostObjectDynamicSubstitutionFormat >> tryWriteObject: anObject with: aTostSerialization [
+TostObjectDynamicSubstitutionFormat >> tryWriteObject: anObject with: aTostTransporter [
 	| substitution |
 	(conditionBlock value: anObject) ifFalse: [ ^false ].
 	 
 	substitution := substitutionBlock value: anObject.
-	aTostSerialization writeSubstitution: substitution for: anObject format: id.
+	aTostTransporter writeSubstitution: substitution for: anObject format: id.
 	^true
 ]

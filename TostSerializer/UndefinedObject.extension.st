@@ -1,7 +1,7 @@
 Extension { #name : #UndefinedObject }
 
 { #category : #'*TostSerializer' }
-UndefinedObject class >> createTostInstanceWith: aTostMaterialization [
+UndefinedObject class >> createTostInstanceWith: aTostTransporter [
 
 	^nil
 ]

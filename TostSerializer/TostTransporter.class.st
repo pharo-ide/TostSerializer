@@ -1,152 +1,388 @@
 "
-I define serialization protocol by collection of formats which should be applied for transferred objects.
-I am kind of constructor for domain specific transporters. I should be created with formats array which define specific properties of serialization protocol.
+I implement object serialization and materialization through given transport stream using defined transport format:
 
-	transporter := TostTransporter formats: {
-		TostDuplicatedObjectFormat new.
-		TostNewObjectOfDuplicatedClassFormat new.
-		TostNewObjectOfNewClassFormat new}
+	transporter := TostTransporter using: aTostTransport on: transportStream. 
 
-High level api methods are named according to transport logic:
+My instances are created for transportation of every object passed into given TostTransport: 
 
-	transporter sendObject: anObject to: aStream
-	transporter receiveObjectFrom: aStream  
-
-Actual serialization and materialization are implemented by first class objects as command like pattern:
-
-- TostSerialization implements serialization of objects on stream
-- TostMaterialization implements materialization objects from stream
-
-I provide two low level methods for them to read and write objects according to defined formats.
-
-- writeObject: anObject with: aSerialization
-- readObjectWith: aMaterialization
-
-Formats define logic how to write objects in specific cases. For example how to write completelly new object on stream or how to write duplicated object which was already written on stream or how to write new object which class was already written on stream during previous object serialization. 
-
-For writing object on stream I ask each format to try it. And I stop at format which suitable to given object and which actualy performed writing on stream. 
-
-	TostTransporter>>writeObject: anObject with: aTostSerialization
-		| success |
-		formats do: [ :each | 		 
-			success := each tryWriteObject: anObject with: aTostSerialization.
-			success ifTrue: [ ^true ] ].
-		^false
+	transport newTransporterOn: transportStream 
 	
-When format writes object on stream it puts own format index as first byte and then the rest bytes which are appropriate for given format and object.
-When I am created with formats array I initialize their indexes according to given array position . This structure should be same on sender and receiver sides which means that I should has same state on both sides of transportation.
+Depending on the type of given stream (write or stream) I should be used to execute concrete transport operation (serialization or materialization).
 
-When I read object from stream I first read format index and extract format instance from my formats array. Then I just ask found format to read object. And concrete format knows how to do it correctly according to own serialization logic.
+1. The serialization of objects into a stream is driven by object traveler which enumerates all object references step by step.
+During traversal each reference is written into the stream according to defined transport formats.
 
-	TostTransporter>>readObjectWith: aTostMaterialization
-		| objectFormatType currentFormat |
-		objectFormatType := aTostMaterialization readByte.	
-		currentFormat := formats at: objectFormatType.
-		^currentFormat readObjectWith: aTostMaterialization
-	
-Look at hierarhy of TostFormat and comments for detailes.
+I implement low level encoding methods like writeInteger: or #writeBytes: which are used for specific objects serialization.
+Objects manage binary encoding in the method:
+	writeTostBodyWith: aTostTransporter
+ 
+During serialization #processedObject dictionary contains all serialized objects as keys and indexes inside stream as values.
+And #processedClasses dictionary contains all classes of serialized objects as keys and indexes inside stream as values.
 
-Important detail:
-Any configuration of my instances should always include two formats: TostNewObjectOfNewClassFormat and TostDuplicatedObjectFormat. 
-First implements real objects serialization. It is impossible to serialize objects without this guy. 
-And last implements correct serialization of cyclic objects graph. Without it cyclic references can't be correctly materialized.
+To write full object use #serializeObject: message.
 
-Concrete applications can use me as is with specific combination for existing format. But also they can implement new formats and subclass me to put extra logic according to them (which could be reused by serialization and materialization to support new format). For example look SeamlessObjectTransporter and SeamlessSubstitutionTostFormat in project Seamless which is main use case for TostSerializer.
+2. The materialization of objects from stream is performed step by step. First I read a root and start iterate references by object traveler. For each reference (which are nil from the begining) I read next object from the stream and assign it to current reference. Object travel iterates in breadth first direction. So at some point it will go deeply to next read object which will be materialized in same way as the root. This loop will continue until traveler will traverse full object graph which will mean the end of object stream.
+
+I implement low level decoding methods like readInteger or #readByte which are used for specific objects materialization.
+Objects manage binary decoding of instances in class side method:
+	createTostInstanceWith: aTostTransporter
+ 
+During materialization #processedObject dictionary contains all materialized objects as values and indexes inside stream as keys.
+And #processedClasses dictionary contains all classes of materialized objects as values and indexes inside stream as keys.
+
+To read full object use #materializeObject message.
 
 Internal Representation and Key Implementation Points.
 
     Instance Variables
-	formats:		<Array of<TostFormat>>
+	transportStream:		<Stream>
+	objectIndex:		<Integert>
+	processedClasses:		<IdentityDictionary>
+	processedObjects:		<IdentityDictionary>
+	transport:		<TostTransport>
+	traveler:		<ObjectTraveler>
+	finalMaterializationActions: <IdentityDictionary<Object, BlockClosure>>
+	network:		<SeamlessNetwork>
+	remotePeer:		<SeamlessRemotePeer>
+			   
 "
 Class {
 	#name : #TostTransporter,
 	#superclass : #Object,
 	#instVars : [
-		'formats'
+		'transportStream',
+		'traveler',
+		'objectIndex',
+		'processedObjects',
+		'processedClasses',
+		'finalMaterializationActions',
+		'transport'
 	],
-	#category : 'TostSerializer'
+	#category : #TostSerializer
 }
 
 { #category : #'instance creation' }
-TostTransporter class >> formats: formatsArray [
+TostTransporter class >> using: aTostTransport on: transportStream [
 	^self new 
-		formats: formatsArray 
+		transport: aTostTransport;
+		transportStream: transportStream
 ]
 
-{ #category : #accessing }
-TostTransporter >> addFirstFormat: aTostBinaryFormat [
-	self formats: { aTostBinaryFormat }, formats
+{ #category : #controlling }
+TostTransporter >> atNextStepProcess: anObject [
+	traveler atNextStepVisit: anObject
 ]
 
-{ #category : #accessing }
-TostTransporter >> addFormat: aTostBinaryFormat before: formatClass [
-	| existingFormatIndex newFormats |
-	existingFormatIndex := self formatIdFor: formatClass.
+{ #category : #'reading-objects' }
+TostTransporter >> completeMaterializationOf: anObject [
+	| action |
+	finalMaterializationActions isEmptyOrNil ifTrue: [ ^self ]. "For optimization we never initialize post actions with empty array because in many cases post processing is not required"
 	
-	newFormats := formats asOrderedCollection.
-	newFormats add: aTostBinaryFormat beforeIndex: existingFormatIndex.
+	action := finalMaterializationActions removeKey: anObject ifAbsent: [^self].
+	action value
+]
+
+{ #category : #initialization }
+TostTransporter >> initialize [
+	super initialize.
 	
-	self formats: newFormats asArray
-]
-
-{ #category : #accessing }
-TostTransporter >> formatIdFor: aTostFormatClass [
-
-	formats doWithIndex: [ :each :id | 
-		each class = aTostFormatClass ifTrue: [ ^id ]].
-	
-	self error: 'Format is not defined'
-]
-
-{ #category : #accessing }
-TostTransporter >> formats [
-	^ formats
-]
-
-{ #category : #accessing }
-TostTransporter >> formats: formatsArray [
-	formatsArray doWithIndex: [ :each :index | each id: index ].
-	self preparedFormats: formatsArray
-]
-
-{ #category : #accessing }
-TostTransporter >> preparedFormats: formatsArray [
-	formats := formatsArray
-]
-
-{ #category : #operations }
-TostTransporter >> readObjectWith: aTostMaterialization [
-
-	| objectFormatType currentFormat |
-	
-	objectFormatType := aTostMaterialization readByte.	
-	currentFormat := formats at: objectFormatType.
-	
-	^currentFormat readObjectWith: aTostMaterialization
+	processedObjects := IdentityDictionary new.
+	processedClasses := IdentityDictionary new.
 ]
 
 { #category : #api }
-TostTransporter >> receiveObjectFrom: aReadStream [
+TostTransporter >> materializeObject [
+	| newObject object |	
+	object := self readNextObject.
+	traveler := ObjectTraveler on: object.
+	traveler whenLeaveNodeDo: [:node | self completeMaterializationOf: node ].
 
-	| materialization |
-	materialization := TostMaterialization by: self on: aReadStream.
-	^materialization materializeObject
+	[ transportStream atEnd not and: [traveler moveToNextReference]] whileTrue: [ 
+		newObject := self readNextObject.	
+		traveler replaceCurrentReferenceWith: newObject
+	 ].
+
+	traveler moveToNextReference. "it should leave all deep children nodes and signal post processing"
+	self completeMaterializationOf: object. "root traversed object is never left"
+	^object
+]
+
+{ #category : #accessing }
+TostTransporter >> objectIndex [
+	^ objectIndex
+]
+
+{ #category : #accessing }
+TostTransporter >> objectIndex: anObject [
+	objectIndex := anObject
+]
+
+{ #category : #accessing }
+TostTransporter >> processedClassAt: index [
+	^processedClasses at: index
+]
+
+{ #category : #accessing }
+TostTransporter >> processedObjectAt: index [
+	^processedObjects at: index
+]
+
+{ #category : #testing }
+TostTransporter >> processesObject: anObject asNodeAt: pathNodesIndex [
+
+	| actualNode |
+	actualNode := traveler nodeAt: pathNodesIndex ifAbsent: [ ^false ].
+	^anObject == actualNode
+]
+
+{ #category : #'reading-primitive data' }
+TostTransporter >> readByte [
+	^transportStream next
+]
+
+{ #category : #'reading-primitive data' }
+TostTransporter >> readBytes: count [
+
+	^transportStream next: count.
+
+]
+
+{ #category : #'reading-primitive data' }
+TostTransporter >> readBytes: count as: aByteArrayClass [
+	| bytes |
+	bytes := self readBytes: count.
+
+	bytes class == aByteArrayClass ifFalse: [ 
+		MirrorPrimitives setClass: aByteArrayClass to: bytes].
+	
+	^bytes
+]
+
+{ #category : #'reading-primitive data' }
+TostTransporter >> readInteger [
+
+	| bytesSize bytes signByte |
+	bytesSize := transportStream next.
+	signByte := transportStream next.
+	bytes := transportStream next: bytesSize.
+	^signByte = 0 ifTrue: [bytes asInteger] ifFalse: [ bytes asInteger negated ]
+]
+
+{ #category : #'reading-objects' }
+TostTransporter >> readNewClassAndObject [
+	
+	| className class |
+	className := self readString: ByteString.
+	class := self class environment at: className asSymbol.
+		
+	processedClasses at: objectIndex put: class.
+	^self readNewObjectOf: class
+]
+
+{ #category : #'reading-objects' }
+TostTransporter >> readNewObjectOf: aClass [
+
+	| newObject |
+	newObject := aClass createTostInstanceWith: self.
+	newObject isTostValueObject ifFalse: [ 
+		processedObjects at: objectIndex put: newObject].
+	^newObject
+]
+
+{ #category : #'reading-objects' }
+TostTransporter >> readNextObject [
+	objectIndex := transportStream position.
+	^transport readObjectWith: self
+]
+
+{ #category : #'reading-objects' }
+TostTransporter >> readObject [
+
+	^transport readObjectWith: self
+]
+
+{ #category : #'reading-primitive data' }
+TostTransporter >> readPositiveInteger [
+
+	| bytesSize bytes |
+	bytesSize := transportStream next.
+	bytes := transportStream next: bytesSize.
+	^bytes asInteger
+]
+
+{ #category : #'reading-primitive data' }
+TostTransporter >> readString: stringClass [
+
+	| bytesSize bytes |
+	bytesSize := self readPositiveInteger.
+	bytes := self readBytes: bytesSize.
+	^stringClass fromByteArray: bytes
 ]
 
 { #category : #api }
-TostTransporter >> sendObject: anObject to: aWriteStream [
+TostTransporter >> serialize: anObject [
 
-	| serialization |
-	serialization := TostSerialization by: self on: aWriteStream.
-	serialization serialize: anObject
+	traveler := ObjectTraveler on: anObject.
+	
+	self writeNextObject: anObject.	
+		
+	traveler referencesDo: [ :each | 
+		self writeNextObject: each ]
 ]
 
-{ #category : #operations }
-TostTransporter >> writeObject: anObject with: aTostSerialization [
-	| success |
-	formats do: [ :each | 		 
-		success := each tryWriteObject: anObject with: aTostSerialization.
-		success ifTrue: [ ^true ] ].
+{ #category : #controlling }
+TostTransporter >> skip: anObject [
+	traveler skip: anObject
+]
+
+{ #category : #accessing }
+TostTransporter >> transport [
+	^ transport
+]
+
+{ #category : #accessing }
+TostTransporter >> transport: anObject [
+	transport := anObject
+]
+
+{ #category : #accessing }
+TostTransporter >> transportStream [
+	^ transportStream
+]
+
+{ #category : #accessing }
+TostTransporter >> transportStream: anObject [
+	transportStream := anObject
+]
+
+{ #category : #accessing }
+TostTransporter >> traveler [ 
+	^traveler
+]
+
+{ #category : #accessing }
+TostTransporter >> traveler: anObject [
+	traveler := anObject
+]
+
+{ #category : #controlling }
+TostTransporter >> whenMaterializationDoneFor: anObject do: actionBlock [
+	"When anObject created from stream it can require post processing action.
+	I execute them when traveler left given object 
+	which means that anObject graph is completally read from stream"
+	finalMaterializationActions ifNil: [ finalMaterializationActions := IdentityDictionary new].
 	
+	finalMaterializationActions at: anObject put: actionBlock
+]
+
+{ #category : #'writing-primitive data' }
+TostTransporter >> writeByte: aByte [
+
+	transportStream nextPut: aByte
+]
+
+{ #category : #'writing-primitive data' }
+TostTransporter >> writeBytes: aByteArray [
+	
+	transportStream nextPutAll: aByteArray 
+]
+
+{ #category : #'writing-objects' }
+TostTransporter >> writeDuplicatedClass: aClass format: formatId [
+
+	processedClasses 
+		at: aClass ifPresent: [:index |
+			self writeObjectIndex: index format: formatId.
+			^true]
+		ifAbsentPut: objectIndex.
+		
 	^false
+]
+
+{ #category : #'writing-objects' }
+TostTransporter >> writeDuplicatedObject: anObject format: formatId [
+
+	anObject isTostValueObject ifTrue: [ ^false ].
+	
+	processedObjects 
+		at: anObject ifPresent: [:index |
+			self writeObjectIndex: index format: formatId.
+			^true]
+		ifAbsentPut: objectIndex.
+
+	^false
+]
+
+{ #category : #'writing-primitive data' }
+TostTransporter >> writeInteger: anInteger [
+	| bytesSize |
+	bytesSize := anInteger bytesCount.
+	bytesSize > 255 ifTrue: [ self error: 'Too big integer is not supported' ].
+	transportStream nextPut: bytesSize.
+	transportStream nextPut: (anInteger < 0 ifTrue: [ 1 ] ifFalse: [ 0 ]).
+	bytesSize to: 1 by: -1 do: [ :i | transportStream nextPut: (anInteger byteAt: i) ]
+]
+
+{ #category : #'writing-objects' }
+TostTransporter >> writeNextObject: anObject [
+	objectIndex := transportStream position.
+	self writeObject: anObject
+]
+
+{ #category : #'writing-objects' }
+TostTransporter >> writeObject: anObject [
+
+	^transport writeObject: anObject with: self
+]
+
+{ #category : #'writing-objects' }
+TostTransporter >> writeObjectClass: aClass format: binaryType [
+	
+	transportStream nextPut: binaryType.
+	aClass name isByteString
+		ifFalse: [ self error: 'Only classes with bytestring names are supported' ].
+		
+	self writeString: aClass name
+]
+
+{ #category : #'writing-objects' }
+TostTransporter >> writeObjectIndex: objectIdInteger format: binaryTypeByte [
+
+	transportStream nextPut: binaryTypeByte.
+	self writePositiveInteger: objectIdInteger 
+]
+
+{ #category : #'writing-primitive data' }
+TostTransporter >> writePositiveInteger: anInteger [
+	| bytesSize |
+	anInteger < 0 ifTrue: [ self error: 'Given int should be positive' ].
+	bytesSize := anInteger bytesCount.
+	bytesSize > 255 ifTrue: [ self error: 'Too big integer is not supported' ].
+	transportStream nextPut: bytesSize.
+	bytesSize to: 1 by: -1 do: [ :i | transportStream nextPut: (anInteger byteAt: i) ]
+]
+
+{ #category : #'writing-objects' }
+TostTransporter >> writeSmallObjectIndex: objectIdByte format: binaryTypeByte [
+
+	transportStream nextPut: binaryTypeByte.
+	transportStream nextPut: objectIdByte
+]
+
+{ #category : #'writing-primitive data' }
+TostTransporter >> writeString: aString [
+	
+	| bytes |
+	bytes := aString asByteArray.
+	self writePositiveInteger: bytes size.
+	transportStream nextPutAll: bytes
+]
+
+{ #category : #'writing-objects' }
+TostTransporter >> writeSubstitution: substitutionObject for: anObject format: formatId [
+
+	self writeByte: formatId.
+	self writeObject: substitutionObject.
+	self atNextStepProcess: substitutionObject.
+	self skip: anObject
 ]

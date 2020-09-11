@@ -1,18 +1,20 @@
 Class {
 	#name : #TostMaterializationTests,
-	#superclass : #TostTransporterTestCase,
-	#instVars : [
-		'materializer',
-		'binaryData'
-	],
+	#superclass : #TostTransportTestCase,
 	#category : #'TostSerializer-Tests'
 }
 
 { #category : #helpers }
 TostMaterializationTests >> binaryData: aByteArray [
-	
-	binaryData := aByteArray asByteArray.
-	materializer dataStream: binaryData readStream
+
+	transportStream reset.
+	transportStream nextPutAll: aByteArray asByteArray.
+	transportStream reset
+]
+
+{ #category : #running }
+TostMaterializationTests >> createTransportStream [
+	transportStream := ReadWriteStream on: ByteArray new
 ]
 
 { #category : #helpers }
@@ -24,20 +26,11 @@ TostMaterializationTests >> serialize: anObject [
 { #category : #helpers }
 TostMaterializationTests >> serializeAll: objects [
 	
-	| serializer dataStream |
-	dataStream := ByteArray new writeStream.
-	serializer := TostSerialization by: transporter on: dataStream.
-	
+	| serializer |
+	transportStream reset.
+	serializer := TostTransporter using: transport on: transportStream.	
 	objects do: [:each | serializer serialize: each].
-	
-	self binaryData: dataStream contents
-]
-
-{ #category : #running }
-TostMaterializationTests >> setUp [
-	super setUp.
-	
-	materializer := TostMaterialization by: transporter on: ByteArray new readStream
+	transportStream reset
 ]
 
 { #category : #'tests-objects' }
@@ -46,7 +39,7 @@ TostMaterializationTests >> testArrayWithTwoEmptyObjects [
 	| actual |
 	self serialize: {Object new. Object new}.
 	
-	actual := materializer materializeObject.
+	actual := transporter materializeObject.
 	
 	actual should beInstanceOf: Array.
 	actual should haveSize: 2.
@@ -60,7 +53,7 @@ TostMaterializationTests >> testBitmapInstance [
 	| actual |
 	self serialize: (Bitmap withAll: #(1 2 5 10)).
 	
-	actual := materializer materializeObject.
+	actual := transporter materializeObject.
 	
 	actual should beInstanceOf: Bitmap.
 	actual should equalInOrder: #(1 2 5 10)
@@ -72,10 +65,10 @@ TostMaterializationTests >> testBlockClosureWithContex [
 	| actual temp block |
 	temp := 10.
 	block := [temp + 2 ].
-	transporter addFirstFormat: (TostWellKnownObjectFormat on: {self. self class >> testSelector. thisContext sender}).
+	transport addFirstFormat: (TostWellKnownObjectFormat on: {self. self class >> testSelector. thisContext sender}).
 	self serialize: block.
 	
-	actual := materializer materializeObject.
+	actual := transporter materializeObject.
 	
 	actual should beInstanceOf: BlockClosure.
 	actual value should equal: temp + 2
@@ -87,10 +80,10 @@ TostMaterializationTests >> testBlockClosureWithoutContext [
 	| actual temp block |
 	temp := 10.
 	block := [temp + 2 ].
-	transporter addFirstFormat: (TostWellKnownObjectFormat on: {self. self class >> testSelector. thisContext}).
+	transport addFirstFormat: (TostWellKnownObjectFormat on: {self. self class >> testSelector. thisContext}).
 	self serialize: block.
 	
-	actual := materializer materializeObject.
+	actual := transporter materializeObject.
 	
 	actual should beInstanceOf: BlockClosure.
 	actual value should equal: temp + 2
@@ -102,7 +95,7 @@ TostMaterializationTests >> testByteArrayInstance [
 	| actual |
 	self serialize: #[1 2 5 10].
 	
-	actual := materializer materializeObject.
+	actual := transporter materializeObject.
 	
 	actual should beInstanceOf: ByteArray.
 	actual should equal: #[1 2 5 10]
@@ -114,7 +107,7 @@ TostMaterializationTests >> testByteString [
 	| actual |
 	self serialize: 'test string'.
 	
-	actual := materializer materializeObject.
+	actual := transporter materializeObject.
 	
 	actual should beInstanceOf: ByteString.
 	actual should equal: 'test string'
@@ -126,7 +119,7 @@ TostMaterializationTests >> testByteSymbol [
 	| actual |
 	self serialize: #'test string'.
 	
-	actual := materializer materializeObject.
+	actual := transporter materializeObject.
 	
 	actual should beInstanceOf: ByteSymbol.
 	actual should equal: #'test string'
@@ -138,7 +131,7 @@ TostMaterializationTests >> testCharacter [
 	| actual |
 	self serialize: $R.
 	
-	actual := materializer materializeObject.
+	actual := transporter materializeObject.
 	
 	actual should equal: $R
 ]
@@ -147,10 +140,10 @@ TostMaterializationTests >> testCharacter [
 TostMaterializationTests >> testCompiledMethod [
 
 	| actual area |
-	transporter addFirstFormat: (TostWellKnownObjectFormat on: {Rectangle}).
+	transport addFirstFormat: (TostWellKnownObjectFormat on: {Rectangle}).
 	self serialize: Rectangle >> #area.
 	
-	actual := materializer materializeObject.
+	actual := transporter materializeObject.
 	
 	actual should beInstanceOf: CompiledMethod.
 	area := actual valueWithReceiver: (0@0 corner: 2@3) arguments: #().
@@ -162,7 +155,7 @@ TostMaterializationTests >> testDictionary [
 	| dict actual key1 key2 |
 	dict := Dictionary newFrom: {Object new -> #item1. Object new -> #item2}.
 	self serialize: dict.	
-	actual := materializer materializeObject.
+	actual := transporter materializeObject.
 	
 	actual should beInstanceOf: Dictionary.
 	"dictionary should be rehashed after materialization. So each key can access own value"
@@ -178,7 +171,7 @@ TostMaterializationTests >> testEmptyObject [
 	| actual |
 	self serialize: Object new.
 	
-	actual := materializer materializeObject.
+	actual := transporter materializeObject.
 	
 	actual should beInstanceOf: Object
 ]
@@ -188,7 +181,7 @@ TostMaterializationTests >> testFalse [
 	| actual |
 	self serialize: false.	
 		
-	actual := materializer materializeObject.
+	actual := transporter materializeObject.
 	
 	actual should be: false
 ]
@@ -199,7 +192,7 @@ TostMaterializationTests >> testFloatInstance [
 	| actual |
 	self serialize: 1.5.
 	
-	actual := materializer materializeObject.
+	actual := transporter materializeObject.
 	
 	actual should beKindOf: Float.
 	actual should equal: 1.5
@@ -211,7 +204,7 @@ TostMaterializationTests >> testFraction [
 	| actual |
 	self serialize: 3/2.
 	
-	actual := materializer materializeObject.
+	actual := transporter materializeObject.
 	
 	actual should beKindOf: Fraction.
 	actual should equal: 3/2
@@ -223,7 +216,7 @@ TostMaterializationTests >> testIntegerInstance [
 	| actual |
 	self serialize: 300.
 	
-	actual := materializer materializeObject.
+	actual := transporter materializeObject.
 	
 	actual should equal: 300
 ]
@@ -234,7 +227,7 @@ TostMaterializationTests >> testIntegerInstanceOf4Bytes [
 	| actual |
 	self serialize: 300000000. "300000000 digitLength 4"
 	
-	actual := materializer materializeObject.
+	actual := transporter materializeObject.
 	
 	actual should equal: 300000000
 ]
@@ -245,7 +238,7 @@ TostMaterializationTests >> testLargeNegativeInteger [
 	| actual |
 	self serialize: -3575740990698772000111222.
 	
-	actual := materializer materializeObject.
+	actual := transporter materializeObject.
 	
 	actual should beInstanceOf: LargeNegativeInteger.
 	actual should equal: -3575740990698772000111222
@@ -257,7 +250,7 @@ TostMaterializationTests >> testLargePositiveInteger [
 	| actual |
 	self serialize: 3575740990698772000111222.
 	
-	actual := materializer materializeObject.
+	actual := transporter materializeObject.
 	
 	actual should beInstanceOf: LargePositiveInteger.
 	actual should equal: 3575740990698772000111222
@@ -269,7 +262,7 @@ TostMaterializationTests >> testNegativeFloatInstance [
 	| actual |
 	self serialize: -1.5.
 	
-	actual := materializer materializeObject.
+	actual := transporter materializeObject.
 	
 	actual should beKindOf: Float.
 	actual should equal: -1.5
@@ -281,7 +274,7 @@ TostMaterializationTests >> testNegativeFraction [
 	| actual |
 	self serialize: -3/2.
 	
-	actual := materializer materializeObject.
+	actual := transporter materializeObject.
 	
 	actual should beKindOf: Fraction.
 	actual should equal: -3/2
@@ -292,7 +285,7 @@ TostMaterializationTests >> testNil [
 	| actual |
 	self serialize: nil.	
 		
-	actual := materializer materializeObject.
+	actual := transporter materializeObject.
 	
 	actual should be: nil
 ]
@@ -301,10 +294,10 @@ TostMaterializationTests >> testNil [
 TostMaterializationTests >> testObjectOfWellKnownClass [
 
 	| actual |
-	transporter addFirstFormat: (TostNewObjectOfWellKnownClassFormat on: { Object }).
+	transport addFirstFormat: (TostNewObjectOfWellKnownClassFormat on: { Object }).
 	self serialize: Object new.
 	
-	actual := materializer materializeObject.
+	actual := transporter materializeObject.
 	
 	actual should beInstanceOf: Object
 ]
@@ -318,9 +311,9 @@ TostMaterializationTests >> testObjectWhichReferenceShouldBeSubstitutedDynamical
 	substitution := 0@0 corner: 2@3.
 	substitutionFormat := TostObjectDynamicSubstitutionFormat 
 									for: [ :each | each == object ] by: [ :each | substitution ].
-	transporter addFirstFormat: substitutionFormat.
+	transport addFirstFormat: substitutionFormat.
 	self serialize: root.
-	actual := materializer materializeObject.
+	actual := transporter materializeObject.
 	
 	actual should beInstanceOf: TostTestContainer.
 	actual content should beInstanceOf: Array.
@@ -337,9 +330,9 @@ TostMaterializationTests >> testObjectWhichReferenceShouldBeSubstitutedStaticall
 	root := TostTestContainer with: {object. 3@4 }.
 	substitution := 0@0 corner: 2@3.
 	substitutionFormat := TostObjectStaticSubstitutionFormat substitutions: { object -> substitution  }.
-	transporter addFirstFormat: substitutionFormat.
+	transport addFirstFormat: substitutionFormat.
 	self serialize: root.
-	actual := materializer materializeObject.
+	actual := transporter materializeObject.
 	
 	actual should beInstanceOf: TostTestContainer.
 	actual content should beInstanceOf: Array.
@@ -354,7 +347,7 @@ TostMaterializationTests >> testObjectWhichReferencesAnotherObjectWhichReference
 	| actual |
 	self serialize: (TostTestContainer with: (TostTestContainer with: 10)).
 	
-	actual := materializer materializeObject.
+	actual := transporter materializeObject.
 	
 	actual should beInstanceOf: TostTestContainer.
 	actual content should beInstanceOf: TostTestContainer.
@@ -367,7 +360,7 @@ TostMaterializationTests >> testObjectWhichReferencesInteger [
 	| actual |
 	self serialize: (TostTestContainer with: 10).
 	
-	actual := materializer materializeObject.
+	actual := transporter materializeObject.
 	
 	actual should beInstanceOf: TostTestContainer.
 	actual content should equal: 10
@@ -385,9 +378,9 @@ TostMaterializationTests >> testObjectWithSubstitutionWhichContainsGivenObjectIt
 	root := TostTestContainer with: {object. 3@4 }.
 	substitution := TostTestContainer with: object.
 	substitutionFormat := TostObjectStaticSubstitutionFormat substitutions: { object -> substitution  }.
-	transporter addFirstFormat: substitutionFormat.
+	transport addFirstFormat: substitutionFormat.
 	self serialize: root.
-	actual := materializer materializeObject.
+	actual := transporter materializeObject.
 	
 	actual should beInstanceOf: TostTestContainer.
 	actual content should beInstanceOf: Array.
@@ -407,9 +400,9 @@ TostMaterializationTests >> testObjectWithTwoReferencesToSameObjectWhichShouldBe
 	root := TostTestContainer with: {object. object }.
 	substitution := 'substituted' copy.
 	substitutionFormat := TostObjectStaticSubstitutionFormat substitutions: { object -> substitution  }.
-	transporter addFormat: substitutionFormat before: TostDuplicatedObjectFormat.
+	transport addFormat: substitutionFormat before: TostDuplicatedObjectFormat.
 	self serialize: root.
-	actual := materializer materializeObject.
+	actual := transporter materializeObject.
 	
 	actual should beInstanceOf: TostTestContainer.
 	actual content should equal: { substitution. substitution }
@@ -426,9 +419,9 @@ TostMaterializationTests >> testPostProcessingLastSubstitution [
 	substitution := Set new.
 	substitution add: Object new; add: Object new.
 	substitutionFormat := TostObjectStaticSubstitutionFormat substitutions: { object -> substitution  }.
-	transporter addFirstFormat: substitutionFormat.
+	transport addFirstFormat: substitutionFormat.
 	self serialize: root.
-	actual := materializer materializeObject.
+	actual := transporter materializeObject.
 	
 	set := actual content.
 	set should beInstanceOf: Set.
@@ -446,7 +439,7 @@ TostMaterializationTests >> testPostProcessingOfMultipleActions [
 	self serialize: {
 		Set new addAll: {Object new. Object new}; yourself.
 		Set new addAll: {Object new. Object new}; yourself}.	
-	actual := materializer materializeObject.
+	actual := transporter materializeObject.
 	set1 := actual first.
 	item1 := set1 asArray first.
 	item2 := set1 asArray last.
@@ -466,7 +459,7 @@ TostMaterializationTests >> testReadingBytes [
 	| actual |
 	self binaryData: #[1 2 3 4].
 	
-	actual := materializer readBytes: 2.
+	actual := transporter readBytes: 2.
 	
 	actual should equal: #[1 2]
 ]
@@ -477,7 +470,7 @@ TostMaterializationTests >> testReadingOneByteInteger [
 	| actual |
 	self binaryData: #[1 0 10].
 	
-	actual := materializer readInteger.
+	actual := transporter readInteger.
 	
 	actual should equal: 10
 ]
@@ -486,7 +479,7 @@ TostMaterializationTests >> testReadingOneByteInteger [
 TostMaterializationTests >> testReadingTwoBytesInteger [
 	| actual |
 	self binaryData: {2. 0. (300 byteAt: 2). (300 byteAt: 1)}.
-	actual := materializer readInteger.
+	actual := transporter readInteger.
 	actual should equal: 300
 ]
 
@@ -494,7 +487,7 @@ TostMaterializationTests >> testReadingTwoBytesInteger [
 TostMaterializationTests >> testReadingTwoBytesNegativeInteger [
 	| actual |
 	self binaryData: {2. 1. (300 byteAt: 2). (300 byteAt: 1)}.
-	actual := materializer readInteger.
+	actual := transporter readInteger.
 	actual should equal: -300
 ]
 
@@ -502,7 +495,7 @@ TostMaterializationTests >> testReadingTwoBytesNegativeInteger [
 TostMaterializationTests >> testReadingTwoBytesPositiveInteger [
 	| actual |
 	self binaryData: {2. (300 byteAt: 2). (300 byteAt: 1)}.
-	actual := materializer readPositiveInteger.
+	actual := transporter readPositiveInteger.
 	actual should equal: 300
 ]
 
@@ -513,8 +506,8 @@ TostMaterializationTests >> testSameObjectTwice [
 	object := Object new.
 	self serializeAll: {object. object}.
 	
-	first := materializer materializeObject.
-	second := materializer materializeObject.
+	first := transporter materializeObject.
+	second := transporter materializeObject.
 	
 	first should beInstanceOf: Object.
 	first should be: second
@@ -526,7 +519,7 @@ TostMaterializationTests >> testSet [
 	set := Set new. 
 	set add: Object new; add: Object new.
 	self serialize: set.	
-	actual := materializer materializeObject.
+	actual := transporter materializeObject.
 	actual should beInstanceOf: Set.
 	"set should be rehashed after materialization. So set should see that each item is included"
 	item1 := actual asArray first.
@@ -542,9 +535,9 @@ TostMaterializationTests >> testTreeObjectsOfSameClassWhereLastTwoAreSame [
 	object := Object new.
 	self serializeAll: {Object new. object. object}.
 	
-	first := materializer materializeObject.
-	second := materializer materializeObject.
-	third := materializer materializeObject.
+	first := transporter materializeObject.
+	second := transporter materializeObject.
+	third := transporter materializeObject.
 	
 	first should beInstanceOf: Object.
 	second should beInstanceOf: Object.
@@ -556,7 +549,7 @@ TostMaterializationTests >> testTrue [
 	| actual |
 	self serialize: true.	
 		
-	actual := materializer materializeObject.
+	actual := transporter materializeObject.
 	
 	actual should be: true
 ]
@@ -567,8 +560,8 @@ TostMaterializationTests >> testTwoObjectsOfSameClass [
 	| first second |
 	self serializeAll: {Object new. Object new}.
 	
-	first := materializer materializeObject.
-	second := materializer materializeObject.
+	first := transporter materializeObject.
+	second := transporter materializeObject.
 	
 	first should beInstanceOf: Object.
 	second should beInstanceOf: Object.
@@ -582,7 +575,7 @@ TostMaterializationTests >> testUUIDInstance [
 	uuid := UUID new.
 	self serialize: uuid.
 	
-	actual := materializer materializeObject.
+	actual := transporter materializeObject.
 	
 	actual should beInstanceOf: UUID.
 	actual should equal: uuid
@@ -593,10 +586,10 @@ TostMaterializationTests >> testWellKnownEmptyObject [
 
 	| actual object |
 	object := Object new.
-	transporter addFirstFormat: (TostWellKnownObjectFormat on: {2@3. object. 10@30}).
+	transport addFirstFormat: (TostWellKnownObjectFormat on: {2@3. object. 10@30}).
 	self serialize: object.
 	
-	actual := materializer materializeObject.
+	actual := transporter materializeObject.
 	
 	actual should beInstanceOf: Object
 ]
@@ -607,7 +600,7 @@ TostMaterializationTests >> testWideString [
 	| actual |
 	self serialize: '1234' asWideString .
 	
-	actual := materializer materializeObject.
+	actual := transporter materializeObject.
 	
 	actual should beInstanceOf: WideString.
 	actual should equal: '1234' asWideString

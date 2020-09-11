@@ -1,18 +1,18 @@
 Extension { #name : #Fraction }
 
 { #category : #'*TostSerializer' }
-Fraction class >> createTostInstanceWith: aTostMaterialization [
+Fraction class >> createTostInstanceWith: aTostTransporter [
 	
 	| denominator numerator |
-	denominator := aTostMaterialization readPositiveInteger.
-	numerator := aTostMaterialization readInteger.
+	denominator := aTostTransporter readPositiveInteger.
+	numerator := aTostTransporter readInteger.
 	
 	^numerator / denominator
 ]
 
 { #category : #'*TostSerializer' }
-Fraction >> writeTostBodyWith: aTostSerialization [
+Fraction >> writeTostBodyWith: aTostTransporter [
 
-	aTostSerialization writePositiveInteger: denominator.
-	aTostSerialization writeInteger: numerator.
+	aTostTransporter writePositiveInteger: denominator.
+	aTostTransporter writeInteger: numerator.
 ]

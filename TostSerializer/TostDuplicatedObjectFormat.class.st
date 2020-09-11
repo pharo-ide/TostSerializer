@@ -1,23 +1,23 @@
 "
-I am format which specifies how to encode duplicated objects which was already written on stream.
-I encode them by stream position where they was already written
+I am a format which specifies how to encode duplicated objects which was already written on a stream.
+I encode them by a stream position where they was already written
 "
 Class {
 	#name : #TostDuplicatedObjectFormat,
 	#superclass : #TostStreamlineFormat,
-	#category : 'TostSerializer'
+	#category : #TostSerializer
 }
 
 { #category : #operations }
-TostDuplicatedObjectFormat >> readObjectWith: aTostMaterialization [ 
+TostDuplicatedObjectFormat >> readObjectWith: aTostTransporter [ 
 	| objectIndex |
-	objectIndex := aTostMaterialization readPositiveInteger.
+	objectIndex := aTostTransporter readPositiveInteger.
 	
-	^aTostMaterialization processedObjectAt: objectIndex
+	^aTostTransporter processedObjectAt: objectIndex
 ]
 
 { #category : #operations }
-TostDuplicatedObjectFormat >> tryWriteObject: anObject with: aTostSerialization [
+TostDuplicatedObjectFormat >> tryWriteObject: anObject with: aTostTransporter [
 	
-	^aTostSerialization writeDuplicatedObject: anObject format: id
+	^aTostTransporter writeDuplicatedObject: anObject format: id
 ]

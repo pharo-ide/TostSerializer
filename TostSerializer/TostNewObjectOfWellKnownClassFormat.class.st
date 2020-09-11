@@ -14,19 +14,19 @@ Class {
 }
 
 { #category : #operations }
-TostNewObjectOfWellKnownClassFormat >> readObjectWith: aTostMaterialization [ 
+TostNewObjectOfWellKnownClassFormat >> readObjectWith: aTostTransporter [ 
 	| class classIndex |
-	classIndex := aTostMaterialization readByte.
+	classIndex := aTostTransporter readByte.
 	class := objects at: classIndex.
 	
-	^aTostMaterialization readNewObjectOf: class
+	^aTostTransporter readNewObjectOf: class
 ]
 
 { #category : #operations }
-TostNewObjectOfWellKnownClassFormat >> tryWriteObject: anObject with: aTostSerialization [
+TostNewObjectOfWellKnownClassFormat >> tryWriteObject: anObject with: aTostTransporter [
 	
 	| written |
-	written := super tryWriteObject: anObject class with: aTostSerialization.
-	written ifTrue: [ anObject writeTostBodyWith: aTostSerialization ].
+	written := super tryWriteObject: anObject class with: aTostTransporter.
+	written ifTrue: [ anObject writeTostBodyWith: aTostTransporter ].
 	^written
 ]

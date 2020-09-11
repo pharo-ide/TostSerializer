@@ -13,18 +13,18 @@ BlockClosure >> correctTostMaterializationWith: materializedWordSize [
 ]
 
 { #category : #'*TostSerializer' }
-BlockClosure class >> createTostInstanceWith: aTostMaterialization [
+BlockClosure class >> createTostInstanceWith: aTostTransporter [
 	| block wordSize |
-	block := super createTostInstanceWith: aTostMaterialization.
-	wordSize := aTostMaterialization readByte.
-	aTostMaterialization 
-		whenInstanceReady: block do: [ block correctTostMaterializationWith: wordSize ].
+	block := super createTostInstanceWith: aTostTransporter.
+	wordSize := aTostTransporter readByte.
+	aTostTransporter 
+		whenMaterializationDoneFor: block do: [ block correctTostMaterializationWith: wordSize ].
 	^block
 ]
 
 { #category : #'*TostSerializer' }
-BlockClosure >> writeTostBodyWith: aTostSerialization [
-	super writeTostBodyWith: aTostSerialization.
+BlockClosure >> writeTostBodyWith: aTostTransporter [
+	super writeTostBodyWith: aTostTransporter.
 	
-	aTostSerialization writeByte: Smalltalk wordSize
+	aTostTransporter writeByte: Smalltalk wordSize
 ]

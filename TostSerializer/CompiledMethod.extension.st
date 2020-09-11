@@ -1,15 +1,15 @@
 Extension { #name : #CompiledMethod }
 
 { #category : #'*TostSerializer' }
-CompiledMethod class >> createTostInstanceWith: aTostMaterialization [
+CompiledMethod class >> createTostInstanceWith: aTostTransporter [
 
 	| size bytecodes method header numLiterals wordSize literalSize newLiteralSize |
-	size := aTostMaterialization readPositiveInteger.
-	wordSize := aTostMaterialization readByte.
-	header := aTostMaterialization readInteger.
-	numLiterals := aTostMaterialization readPositiveInteger.	
+	size := aTostTransporter readPositiveInteger.
+	wordSize := aTostTransporter readByte.
+	header := aTostTransporter readInteger.
+	numLiterals := aTostTransporter readPositiveInteger.	
 	literalSize := (numLiterals + 1) * wordSize.
-	bytecodes := aTostMaterialization readBytes: size - literalSize.
+	bytecodes := aTostTransporter readBytes: size - literalSize.
 
 	method := self newMethod: bytecodes size header: header.
 	newLiteralSize := (numLiterals + 1) * Smalltalk wordSize.
@@ -23,15 +23,15 @@ CompiledMethod class >> createTostInstanceWith: aTostMaterialization [
 ]
 
 { #category : #'*TostSerializer' }
-CompiledMethod >> writeTostBodyWith: aTostSerialization [
+CompiledMethod >> writeTostBodyWith: aTostTransporter [
 	| bytecodes initialPC |
 	initialPC := self initialPC.
 	bytecodes := ByteArray new: self size - initialPC + 1.
 	bytecodes replaceFrom: 1 to: bytecodes size with: self startingAt: initialPC.
 	
-	aTostSerialization writePositiveInteger: self size.
-	aTostSerialization writeByte: Smalltalk wordSize. "4 or 8 for 32 and 64 bits image"
-	aTostSerialization writeInteger: self header.
-	aTostSerialization writePositiveInteger: self numLiterals.
-	aTostSerialization writeBytes: bytecodes
+	aTostTransporter writePositiveInteger: self size.
+	aTostTransporter writeByte: Smalltalk wordSize. "4 or 8 for 32 and 64 bits image"
+	aTostTransporter writeInteger: self header.
+	aTostTransporter writePositiveInteger: self numLiterals.
+	aTostTransporter writeBytes: bytecodes
 ]
