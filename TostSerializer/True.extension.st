@@ -1,7 +1,7 @@
 Extension { #name : #True }
 
 { #category : #'*TostSerializer' }
-True class >> createTostInstanceWith: aTostMaterialization [
+True class >> createTostInstanceWith: aTostTransporter [
 
 	^true
 ]

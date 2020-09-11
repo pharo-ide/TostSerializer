@@ -1,13 +1,13 @@
 Extension { #name : #String }
 
 { #category : #'*TostSerializer' }
-String class >> createTostInstanceWith: aTostMaterialization [
+String class >> createTostInstanceWith: aTostTransporter [
 	
-	^aTostMaterialization readString: self
+	^aTostTransporter readString: self
 ]
 
 { #category : #'*TostSerializer' }
-String >> writeTostBodyWith: aTostSerializer [
+String >> writeTostBodyWith: aTostTransporter [
 	
-	aTostSerializer writeString: self
+	aTostTransporter writeString: self
 ]

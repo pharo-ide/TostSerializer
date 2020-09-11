@@ -1,9 +1,9 @@
 Extension { #name : #Symbol }
 
 { #category : #'*TostSerializer' }
-Symbol class >> createTostInstanceWith: aTostMaterialization [
+Symbol class >> createTostInstanceWith: aTostTransporter [
 
 	| string |
-	string := super createTostInstanceWith: aTostMaterialization.
+	string := super createTostInstanceWith: aTostTransporter.
 	^string asSymbol
 ]

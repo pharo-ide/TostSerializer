@@ -1,11 +1,11 @@
 Extension { #name : #HashedCollection }
 
 { #category : #'*TostSerializer' }
-HashedCollection class >> createTostInstanceWith: aTostMaterialization [
+HashedCollection class >> createTostInstanceWith: aTostTransporter [
 
 	| instance |
-	instance := super createTostInstanceWith: aTostMaterialization.
-	aTostMaterialization 
-		whenInstanceReady: instance do: [ instance rehash ].
+	instance := super createTostInstanceWith: aTostTransporter.
+	aTostTransporter 
+		whenMaterializationDoneFor: instance do: [ instance rehash ].
 	^instance
 ]

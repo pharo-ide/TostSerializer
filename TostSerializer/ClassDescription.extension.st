@@ -1,8 +1,8 @@
 Extension { #name : #ClassDescription }
 
 { #category : #'*TostSerializer' }
-ClassDescription >> createTostInstanceWith: aTostMaterialization [
+ClassDescription >> createTostInstanceWith: aTostTransporter [
 	^self isVariable 
-		ifTrue: [ self basicNew: aTostMaterialization readPositiveInteger ]
+		ifTrue: [ self basicNew: aTostTransporter readPositiveInteger ]
 		ifFalse: [ self basicNew]
 ]

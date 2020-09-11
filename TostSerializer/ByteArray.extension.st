@@ -1,14 +1,14 @@
 Extension { #name : #ByteArray }
 
 { #category : #'*TostSerializer' }
-ByteArray class >> createTostInstanceWith: aTostMaterialization [
+ByteArray class >> createTostInstanceWith: aTostTransporter [
 	| size |
-	size := aTostMaterialization readPositiveInteger.
-	^aTostMaterialization readBytes: size as: self
+	size := aTostTransporter readPositiveInteger.
+	^aTostTransporter readBytes: size as: self
 ]
 
 { #category : #'*TostSerializer' }
-ByteArray >> writeTostBodyWith: aTostSerialization [
-	super writeTostBodyWith: aTostSerialization.
-	aTostSerialization writeBytes: self
+ByteArray >> writeTostBodyWith: aTostTransporter [
+	super writeTostBodyWith: aTostTransporter.
+	aTostTransporter writeBytes: self
 ]

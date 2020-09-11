@@ -23,17 +23,17 @@ TostWellKnownObjectFormat class >> default [
 ]
 
 { #category : #operations }
-TostWellKnownObjectFormat >> readObjectWith: aTostMaterialization [ 
+TostWellKnownObjectFormat >> readObjectWith: aTostTransporter [ 
 	| objectIndex |
-	objectIndex := aTostMaterialization readByte.
+	objectIndex := aTostTransporter readByte.
 	^objects at: objectIndex
 ]
 
 { #category : #operations }
-TostWellKnownObjectFormat >> tryWriteObject: anObject with: aTostSerialization [
+TostWellKnownObjectFormat >> tryWriteObject: anObject with: aTostTransporter [
 	
 	| written |
-	written := super tryWriteObject: anObject with: aTostSerialization.
-	written ifTrue: [ aTostSerialization skip: anObject].
+	written := super tryWriteObject: anObject with: aTostTransporter.
+	written ifTrue: [ aTostTransporter skip: anObject].
 	^written
 ]

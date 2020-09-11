@@ -1,18 +1,18 @@
 Extension { #name : #Float }
 
 { #category : #'*TostSerializer' }
-Float class >> createTostInstanceWith: aTostMaterialization [
+Float class >> createTostInstanceWith: aTostTransporter [
 	^ (self new: 2)
-		at: 1 put: aTostMaterialization readPositiveInteger;
-		at: 2 put: aTostMaterialization readPositiveInteger;
+		at: 1 put: aTostTransporter readPositiveInteger;
+		at: 2 put: aTostTransporter readPositiveInteger;
 		yourself.
 
 ]
 
 { #category : #'*TostSerializer' }
-Float >> writeTostBodyWith: aTostSerialization [
+Float >> writeTostBodyWith: aTostTransporter [
 
-	aTostSerialization
+	aTostTransporter
 		writePositiveInteger:  (self at: 1);
 		writePositiveInteger:  (self at: 2)
 ]

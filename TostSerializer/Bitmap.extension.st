@@ -1,13 +1,13 @@
 Extension { #name : #Bitmap }
 
 { #category : #'*TostSerializer' }
-Bitmap class >> createTostInstanceWith: aTostMaterialization [
+Bitmap class >> createTostInstanceWith: aTostTransporter [
 	| bytes |
-	bytes := ByteArray createTostInstanceWith: aTostMaterialization.
+	bytes := ByteArray createTostInstanceWith: aTostTransporter.
 	^Bitmap decompressFromByteArray: bytes
 ]
 
 { #category : #'*TostSerializer' }
-Bitmap >> writeTostBodyWith: aTostSerialization [
-	self compressToByteArray writeTostBodyWith: aTostSerialization
+Bitmap >> writeTostBodyWith: aTostTransporter [
+	self compressToByteArray writeTostBodyWith: aTostTransporter
 ]

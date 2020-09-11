@@ -35,9 +35,9 @@ TostObjectStaticSubstitutionFormat >> substitutions: anObject [
 ]
 
 { #category : #operations }
-TostObjectStaticSubstitutionFormat >> tryWriteObject: anObject with: aTostSerialization [
+TostObjectStaticSubstitutionFormat >> tryWriteObject: anObject with: aTostTransporter [
 	| substitution |
 	substitution := substitutions at: anObject ifAbsent: [ ^false ].
-	aTostSerialization writeSubstitution: substitution for: anObject format: id.
+	aTostTransporter writeSubstitution: substitution for: anObject format: id.
 	^true
 ]

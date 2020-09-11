@@ -14,20 +14,20 @@ Context >> correctTostMaterializationWith: materializedWordSize [
 ]
 
 { #category : #'*TostSerializer' }
-Context class >> createTostInstanceWith: aTostMaterialization [
+Context class >> createTostInstanceWith: aTostTransporter [
 
 	| frameSize wordSize context |
-	wordSize := aTostMaterialization readByte.
-	frameSize := aTostMaterialization readByte.	
+	wordSize := aTostTransporter readByte.
+	frameSize := aTostTransporter readByte.	
 	context := super basicNew: frameSize.	
-	aTostMaterialization 
-		whenInstanceReady: context do: [ context correctTostMaterializationWith: wordSize ].
+	aTostTransporter 
+		whenMaterializationDoneFor: context do: [ context correctTostMaterializationWith: wordSize ].
 	^context
 ]
 
 { #category : #'*TostSerializer' }
-Context >> writeTostBodyWith: aTostSerialization [
+Context >> writeTostBodyWith: aTostTransporter [
 
-	aTostSerialization writeByte: Smalltalk wordSize.
-	aTostSerialization writeByte: self method frameSize
+	aTostTransporter writeByte: Smalltalk wordSize.
+	aTostTransporter writeByte: self method frameSize
 ]

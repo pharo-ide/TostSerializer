@@ -6,7 +6,7 @@ Object >> isTostValueObject [
 ]
 
 { #category : #'*TostSerializer' }
-Object >> writeTostBodyWith: aTostSerialization [
+Object >> writeTostBodyWith: aTostTransporter [
  
-	self class isVariable ifTrue: [ aTostSerialization writePositiveInteger: self size]
+	self class isVariable ifTrue: [ aTostTransporter writePositiveInteger: self size]
 ]

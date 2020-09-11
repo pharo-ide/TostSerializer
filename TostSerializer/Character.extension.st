@@ -1,9 +1,9 @@
 Extension { #name : #Character }
 
 { #category : #'*TostSerializer' }
-Character class >> createTostInstanceWith: aTostMaterialization [
+Character class >> createTostInstanceWith: aTostTransporter [
 
-	^self value: aTostMaterialization readPositiveInteger 
+	^self value: aTostTransporter readPositiveInteger 
 ]
 
 { #category : #'*TostSerializer' }
@@ -12,7 +12,7 @@ Character >> isTostValueObject [
 ]
 
 { #category : #'*TostSerializer' }
-Character >> writeTostBodyWith: aTostSerialization [
+Character >> writeTostBodyWith: aTostTransporter [
 	
-	aTostSerialization writePositiveInteger: self asInteger
+	aTostTransporter writePositiveInteger: self asInteger
 ]
