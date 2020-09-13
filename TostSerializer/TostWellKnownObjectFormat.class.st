@@ -24,9 +24,11 @@ TostWellKnownObjectFormat class >> default [
 
 { #category : #operations }
 TostWellKnownObjectFormat >> readObjectWith: aTostTransporter [ 
-	| objectIndex |
+	| objectIndex foundObject |
 	objectIndex := aTostTransporter readByte.
-	^objects at: objectIndex
+	foundObject := objects at: objectIndex.
+	aTostTransporter skip: foundObject.
+	^foundObject
 ]
 
 { #category : #operations }

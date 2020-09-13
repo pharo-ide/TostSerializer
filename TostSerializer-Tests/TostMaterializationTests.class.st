@@ -29,7 +29,7 @@ TostMaterializationTests >> serializeAll: objects [
 	| serializer |
 	transportStream reset.
 	serializer := TostTransporter using: transport on: transportStream.	
-	objects do: [:each | serializer serialize: each].
+	objects do: [:each | serializer serializeObject: each].
 	transportStream reset
 ]
 
@@ -67,10 +67,11 @@ TostMaterializationTests >> testBlockClosureWithContex [
 	block := [temp + 2 ].
 	transport addFirstFormat: (TostWellKnownObjectFormat on: {self. self class >> testSelector. thisContext sender}).
 	self serialize: block.
-	
+
 	actual := transporter materializeObject.
 	
-	actual should beInstanceOf: BlockClosure.
+	actual should beKindOf: BlockClosure.
+	actual class should be: block class.
 	actual value should equal: temp + 2
 ]
 
@@ -81,11 +82,13 @@ TostMaterializationTests >> testBlockClosureWithoutContext [
 	temp := 10.
 	block := [temp + 2 ].
 	transport addFirstFormat: (TostWellKnownObjectFormat on: {self. self class >> testSelector. thisContext}).
+
 	self serialize: block.
 	
 	actual := transporter materializeObject.
 	
-	actual should beInstanceOf: BlockClosure.
+	actual should beKindOf: BlockClosure.
+	actual class should be: block class.
 	actual value should equal: temp + 2
 ]
 
@@ -230,6 +233,23 @@ TostMaterializationTests >> testIntegerInstanceOf4Bytes [
 	actual := transporter materializeObject.
 	
 	actual should equal: 300000000
+]
+
+{ #category : #'tests-objects' }
+TostMaterializationTests >> testInternalDictionaryAsLastChild [
+	| dict actual key1 key2 container |
+	dict := Dictionary newFrom: {Object new -> #item1. Object new -> #item2}.
+	container := TostTestContainer with: dict.
+	self serialize: container.	
+		
+	actual := transporter materializeObject content.
+	
+	actual should beInstanceOf: Dictionary.
+	"dictionary should be rehashed after materialization. So each key can access own value"
+	key1 := actual keyAtValue: #item1.
+	key2 := actual keyAtValue: #item2.
+	actual should include: #item1 at: key1.
+	actual should include: #item2 at: key2.
 ]
 
 { #category : #'tests-objects' }
@@ -587,11 +607,56 @@ TostMaterializationTests >> testWellKnownEmptyObject [
 	| actual object |
 	object := Object new.
 	transport addFirstFormat: (TostWellKnownObjectFormat on: {2@3. object. 10@30}).
+	self serialize: {object}.
+	
+	actual := transporter materializeObject.
+	
+	actual should beInstanceOf: Array.
+	actual first should beInstanceOf: Object.
+	actual first should be: object
+]
+
+{ #category : #'tests-objects' }
+TostMaterializationTests >> testWellKnownEmptyRootObject [
+
+	| actual object |
+	object := Object new.
+	transport addFirstFormat: (TostWellKnownObjectFormat on: {object}).
 	self serialize: object.
 	
 	actual := transporter materializeObject.
 	
-	actual should beInstanceOf: Object
+	actual should beInstanceOf: Object.
+	actual should be: object
+]
+
+{ #category : #'tests-objects' }
+TostMaterializationTests >> testWellKnownNonEmptyObjectInsideContainer [
+
+	| actual array container |
+	array := #(1 2) copy. "copy is to avoid posible change of literal state in case of broken test"
+	container := {array. #(3 4) copy}.
+	transport addFirstFormat: (TostWellKnownObjectFormat on: {array}).
+	self serialize: container.
+	
+	actual := transporter materializeObject.
+	
+	actual should equal: container.
+	array should equal: #(1 2) copy.
+]
+
+{ #category : #'tests-objects' }
+TostMaterializationTests >> testWellKnownNonEmptyRootObject [
+
+	| actual object |
+	object := #(1 2) copy.
+	transport addFirstFormat: (TostWellKnownObjectFormat on: {object}).
+	
+	self serialize: object.	
+	actual := transporter materializeObject.
+	
+	actual should be: object.
+	actual should equal: #(1 2) copy
 ]
 
 { #category : #'tests-objects' }

@@ -28,9 +28,9 @@ TostSerializationTests >> testByteArrayInstance [
 
 	| object |
 	object := #[1 2 5 10].
-	transporter serialize: object.
+	transporter serializeObject: object.
 	self clearData.
-	transporter serialize: object copy.
+	transporter serializeObject: object copy.
 	
 	self binaryData should equal: {
 		transport formatIdFor: TostNewObjectOfDuplicatedClassFormat. 
@@ -44,7 +44,7 @@ TostSerializationTests >> testEmptyObject [
 
 	| object classNameBytes classNameSizeBytes |
 	object := Object new.
-	transporter serialize: object.
+	transporter serializeObject: object.
 	classNameBytes := Object name asByteArray.
 	classNameSizeBytes := #[1], classNameBytes size asByteArray.
 	
@@ -57,7 +57,7 @@ TostSerializationTests >> testObjectAndItClass [
 	| object |
 	object := Object new.
 	transporter writeBytes: #[ 1 2 3 4 ].
-	transporter serialize: Object new.
+	transporter serializeObject: Object new.
 	self clearData.
 	transporter writeObject: Object.
 	
@@ -71,7 +71,7 @@ TostSerializationTests >> testObjectOfWellKnownClass [
 	extraFormat := TostNewObjectOfWellKnownClassFormat on: { Point. Object. Array }.
 	transport addFirstFormat: extraFormat.
 	
-	transporter serialize: Object new.
+	transporter serializeObject: Object new.
 	
 	self binaryData should equal: {extraFormat id. 2} asByteArray
 ]
@@ -82,9 +82,9 @@ TostSerializationTests >> testSameObjectTwice [
 	| object |
 	object := Object new.
 	transporter writeBytes: #[1 2 3 4]. "index of following object should be equal stream position (4)"
-	transporter serialize: object.
+	transporter serializeObject: object.
 	self clearData.
-	transporter serialize: object.
+	transporter serializeObject: object.
 	
 	self binaryData should equal: ({transport formatIdFor: TostDuplicatedObjectFormat}, #[1 4]) asByteArray
 ]
@@ -95,10 +95,10 @@ TostSerializationTests >> testThreeObjectsOfSameClassWhereFirstTwoAreSame [
 	| object |
 	object := Object new.
 	transporter writeBytes: #[ 1 2 3 4 ].
-	transporter serialize: object.
-	transporter serialize: object.
+	transporter serializeObject: object.
+	transporter serializeObject: object.
 	self clearData.
-	transporter serialize: Object new.
+	transporter serializeObject: Object new.
 	
 	self binaryData should equal: {transport formatIdFor: TostNewObjectOfDuplicatedClassFormat. 1. 4} asByteArray 
 ]
@@ -109,11 +109,11 @@ TostSerializationTests >> testThreeObjectsOfSameClassWhereLastTwoAreSame [
 	| object objectIndex |
 	object := Object new.
 	transporter writeBytes: #[ 1 2 3 4 ].
-	transporter serialize: Object new.
+	transporter serializeObject: Object new.
 	objectIndex := transporter transportStream position.
-	transporter serialize: object.
+	transporter serializeObject: object.
 	self clearData.
-	transporter serialize: object.
+	transporter serializeObject: object.
 	
 	self binaryData should equal: {transport formatIdFor: TostDuplicatedObjectFormat. 1. objectIndex} asByteArray 
 ]
@@ -124,10 +124,10 @@ TostSerializationTests >> testTwoObjectsOfSameClass [
 	| object |
 	object := Object new.
 	transporter writeBytes: #[ 1 2 3 4 ].
-	transporter serialize: Object new.
+	transporter serializeObject: Object new.
 	self clearData.
 
-	transporter serialize: Object new.
+	transporter serializeObject: Object new.
 	
 	self binaryData should equal: {transport formatIdFor: TostNewObjectOfDuplicatedClassFormat. 1. 4} asByteArray 
 ]
@@ -141,7 +141,7 @@ TostSerializationTests >> testWellKnownCompositeObject [
 	transport addFirstFormat: (TostNewObjectOfWellKnownClassFormat on: {TostTestContainer}).
 	extraFormat := TostWellKnownObjectFormat on: {2@3. object. 10@30 }.
 	transport addFirstFormat: extraFormat.
-	transporter serialize: container.
+	transporter serializeObject: container.
 	
 	self binaryData should equal: {2. 1. extraFormat id. 2} asByteArray
 ]
@@ -154,9 +154,22 @@ TostSerializationTests >> testWellKnownEmptyObject [
 	extraFormat := TostWellKnownObjectFormat on: {2@3. object. 10@30 }.
 	transport addFirstFormat: extraFormat.
 	
-	transporter serialize: object.
+	transporter serializeObject: object.
 	
 	self binaryData should equal: {extraFormat id. 2} asByteArray
+]
+
+{ #category : #'tests-objects' }
+TostSerializationTests >> testWellKnownNonEmptyRootObject [
+
+	| extraFormat object |
+	object := #(1 2) copy.
+	extraFormat := TostWellKnownObjectFormat on: {object}.
+	transport addFirstFormat: extraFormat.
+	
+	transporter serializeObject: object.
+	
+	self binaryData should equal: {extraFormat id. 1} asByteArray
 ]
 
 { #category : #'tests-primitive data' }
