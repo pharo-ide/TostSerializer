@@ -140,7 +140,7 @@ TostTransport >> sendObject: anObject to: transportStream [
 
 	| transporter |
 	transporter := self newTransporterOn: transportStream.
-	transporter serialize: anObject
+	transporter serializeObject: anObject
 ]
 
 { #category : #operations }

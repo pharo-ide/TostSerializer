@@ -29,7 +29,7 @@ TostMaterializationTests >> serializeAll: objects [
 	| serializer |
 	transportStream reset.
 	serializer := TostTransporter using: transport on: transportStream.	
-	objects do: [:each | serializer serialize: each].
+	objects do: [:each | serializer serializeObject: each].
 	transportStream reset
 ]
 
@@ -233,6 +233,23 @@ TostMaterializationTests >> testIntegerInstanceOf4Bytes [
 	actual := transporter materializeObject.
 	
 	actual should equal: 300000000
+]
+
+{ #category : #'tests-objects' }
+TostMaterializationTests >> testInternalDictionaryAsLastChild [
+	| dict actual key1 key2 container |
+	dict := Dictionary newFrom: {Object new -> #item1. Object new -> #item2}.
+	container := TostTestContainer with: dict.
+	self serialize: container.	
+		
+	actual := transporter materializeObject content.
+	
+	actual should beInstanceOf: Dictionary.
+	"dictionary should be rehashed after materialization. So each key can access own value"
+	key1 := actual keyAtValue: #item1.
+	key2 := actual keyAtValue: #item2.
+	actual should include: #item1 at: key1.
+	actual should include: #item2 at: key2.
 ]
 
 { #category : #'tests-objects' }

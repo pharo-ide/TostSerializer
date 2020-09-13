@@ -14,7 +14,7 @@ Class {
 	#classInstVars : [
 		'default'
 	],
-	#category : #TostSerializer
+	#category : 'TostSerializer'
 }
 
 { #category : #accessing }

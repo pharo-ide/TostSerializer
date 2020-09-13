@@ -102,17 +102,12 @@ TostTransporter >> materializeObject [
 		^object ].
 	traveler startOn: object.			
 				
-	[ transportStream atEnd not and: [traveler moveToNextReference]] whileTrue: [ 
+	[ transportStream atEnd not & traveler moveToNextReference] whileTrue: [
+		"& is to always complete traversal at the end of stream when traveler is at some leaf child"
 		newObject := self readNextObject.	
 		traveler replaceCurrentReferenceWith: newObject
 	 ].
-
-	"While there are no other references under traversal route
-	the traveler points to the last leaf child node which can be inside deep children tree.
-	So the next step here is to leave all of them	to signal their materialization completion"
-	traveler moveToNextReference. 
-	"But the root object is never left the trafersal 
-	and therefore we should complete the materialization of the root manually"
+	"Еhe root object is never left the trafersal and therefore the manual completion is erquired"
 	self completeMaterializationOf: object. 
 	^object
 ]
@@ -230,7 +225,7 @@ TostTransporter >> readString: stringClass [
 ]
 
 { #category : #api }
-TostTransporter >> serialize: anObject [
+TostTransporter >> serializeObject: anObject [
 
 	traveler := ObjectTraveler new.	
 	self writeNextObject: anObject.	
