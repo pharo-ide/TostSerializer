@@ -93,17 +93,27 @@ TostTransporter >> initialize [
 { #category : #api }
 TostTransporter >> materializeObject [
 	| newObject object |	
+	traveler := ObjectTraveler new.
+	traveler whenLeaveNodeDo: [:node | self completeMaterializationOf: node ].	
 	object := self readNextObject.
-	traveler := ObjectTraveler on: object.
-	traveler whenLeaveNodeDo: [:node | self completeMaterializationOf: node ].
-
+	(traveler isTraversed: object) ifTrue: [ 
+		"The initial read of root object marks it as completely processed.
+		So nothing else needs to be done with it"
+		^object ].
+	traveler startOn: object.			
+				
 	[ transportStream atEnd not and: [traveler moveToNextReference]] whileTrue: [ 
 		newObject := self readNextObject.	
 		traveler replaceCurrentReferenceWith: newObject
 	 ].
 
-	traveler moveToNextReference. "it should leave all deep children nodes and signal post processing"
-	self completeMaterializationOf: object. "root traversed object is never left"
+	"While there are no other references under traversal route
+	the traveler points to the last leaf child node which can be inside deep children tree.
+	So the next step here is to leave all of them	to signal their materialization completion"
+	traveler moveToNextReference. 
+	"But the root object is never left the trafersal 
+	and therefore we should complete the materialization of the root manually"
+	self completeMaterializationOf: object. 
 	^object
 ]
 
@@ -222,10 +232,14 @@ TostTransporter >> readString: stringClass [
 { #category : #api }
 TostTransporter >> serialize: anObject [
 
-	traveler := ObjectTraveler on: anObject.
-	
+	traveler := ObjectTraveler new.	
 	self writeNextObject: anObject.	
-		
+	(traveler isTraversed: anObject) ifTrue: [ 
+		"The initial write of root object marks it as completely processed.
+		So nothing else needs to be done with it"
+		^self ].
+	traveler startOn: anObject.
+	
 	traveler referencesDo: [ :each | 
 		self writeNextObject: each ]
 ]

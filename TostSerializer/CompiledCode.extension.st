@@ -1,7 +1,7 @@
-Extension { #name : #CompiledMethod }
+Extension { #name : #CompiledCode }
 
 { #category : #'*TostSerializer' }
-CompiledMethod class >> createTostInstanceWith: aTostTransporter [
+CompiledCode class >> createTostInstanceWith: aTostTransporter [
 
 	| size bytecodes method header numLiterals wordSize literalSize newLiteralSize |
 	size := aTostTransporter readPositiveInteger.
@@ -23,7 +23,7 @@ CompiledMethod class >> createTostInstanceWith: aTostTransporter [
 ]
 
 { #category : #'*TostSerializer' }
-CompiledMethod >> writeTostBodyWith: aTostTransporter [
+CompiledCode >> writeTostBodyWith: aTostTransporter [
 	| bytecodes initialPC |
 	initialPC := self initialPC.
 	bytecodes := ByteArray new: self size - initialPC + 1.

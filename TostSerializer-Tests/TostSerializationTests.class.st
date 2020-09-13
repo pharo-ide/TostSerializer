@@ -159,6 +159,19 @@ TostSerializationTests >> testWellKnownEmptyObject [
 	self binaryData should equal: {extraFormat id. 2} asByteArray
 ]
 
+{ #category : #'tests-objects' }
+TostSerializationTests >> testWellKnownNonEmptyRootObject [
+
+	| extraFormat object |
+	object := #(1 2) copy.
+	extraFormat := TostWellKnownObjectFormat on: {object}.
+	transport addFirstFormat: extraFormat.
+	
+	transporter serialize: object.
+	
+	self binaryData should equal: {extraFormat id. 1} asByteArray
+]
+
 { #category : #'tests-primitive data' }
 TostSerializationTests >> testWritingByteArray [
 

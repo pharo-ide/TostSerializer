@@ -67,10 +67,11 @@ TostMaterializationTests >> testBlockClosureWithContex [
 	block := [temp + 2 ].
 	transport addFirstFormat: (TostWellKnownObjectFormat on: {self. self class >> testSelector. thisContext sender}).
 	self serialize: block.
-	
+
 	actual := transporter materializeObject.
 	
-	actual should beInstanceOf: BlockClosure.
+	actual should beKindOf: BlockClosure.
+	actual class should be: block class.
 	actual value should equal: temp + 2
 ]
 
@@ -81,11 +82,13 @@ TostMaterializationTests >> testBlockClosureWithoutContext [
 	temp := 10.
 	block := [temp + 2 ].
 	transport addFirstFormat: (TostWellKnownObjectFormat on: {self. self class >> testSelector. thisContext}).
+
 	self serialize: block.
 	
 	actual := transporter materializeObject.
 	
-	actual should beInstanceOf: BlockClosure.
+	actual should beKindOf: BlockClosure.
+	actual class should be: block class.
 	actual value should equal: temp + 2
 ]
 
@@ -587,11 +590,56 @@ TostMaterializationTests >> testWellKnownEmptyObject [
 	| actual object |
 	object := Object new.
 	transport addFirstFormat: (TostWellKnownObjectFormat on: {2@3. object. 10@30}).
+	self serialize: {object}.
+	
+	actual := transporter materializeObject.
+	
+	actual should beInstanceOf: Array.
+	actual first should beInstanceOf: Object.
+	actual first should be: object
+]
+
+{ #category : #'tests-objects' }
+TostMaterializationTests >> testWellKnownEmptyRootObject [
+
+	| actual object |
+	object := Object new.
+	transport addFirstFormat: (TostWellKnownObjectFormat on: {object}).
 	self serialize: object.
 	
 	actual := transporter materializeObject.
 	
-	actual should beInstanceOf: Object
+	actual should beInstanceOf: Object.
+	actual should be: object
+]
+
+{ #category : #'tests-objects' }
+TostMaterializationTests >> testWellKnownNonEmptyObjectInsideContainer [
+
+	| actual array container |
+	array := #(1 2) copy. "copy is to avoid posible change of literal state in case of broken test"
+	container := {array. #(3 4) copy}.
+	transport addFirstFormat: (TostWellKnownObjectFormat on: {array}).
+	self serialize: container.
+	
+	actual := transporter materializeObject.
+	
+	actual should equal: container.
+	array should equal: #(1 2) copy.
+]
+
+{ #category : #'tests-objects' }
+TostMaterializationTests >> testWellKnownNonEmptyRootObject [
+
+	| actual object |
+	object := #(1 2) copy.
+	transport addFirstFormat: (TostWellKnownObjectFormat on: {object}).
+	
+	self serialize: object.	
+	actual := transporter materializeObject.
+	
+	actual should be: object.
+	actual should equal: #(1 2) copy
 ]
 
 { #category : #'tests-objects' }
