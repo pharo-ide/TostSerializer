@@ -10,10 +10,10 @@ BaselineOfTostSerializer >> baseline: spec [
 	spec for: #'common' do: [
 		spec 
 			baseline: 'StateSpecs' with: [
-				spec repository: 'github://dionisiydk/StateSpecs:v4.0.2'];
+				spec repository: 'github://dionisiydk/StateSpecs:v5.0.2'];
 			baseline: 'ObjectTravel' with: [
 				spec
-					repository: 'github://pharo-ide/ObjectTravel:v1.0.3';
+					repository: 'github://pharo-ide/ObjectTravel:v1.0.4';
 					loads: 'Core' ];
 			project: 'ObjectTravelTests' copyFrom: 'ObjectTravel' with: [
 				spec loads: 'Tests'].
